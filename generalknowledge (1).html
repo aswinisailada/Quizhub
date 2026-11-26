@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>General Knowledge Quiz</title>
+  <style>
+    /* Your existing CSS styles */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-image: url('background.jpg');
+      background-size: cover;
+      background-position: center;
+      color: #333;
+    }
+    .quiz-container {
+      padding: 40px;
+      background-color: rgba(255, 255, 255, 0.85);
+      margin: 2% auto;
+      width: 90%;
+      height: 50vh;
+      border-radius: 20px;
+      overflow-y: auto;
+    }
+    .header, .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .question {
+      margin: 20px 0;
+      font-size: 24px;
+    }
+    .options button {
+      display: block;
+      margin: 10px 0;
+      padding: 12px;
+      width: 100%;
+      font-size: 18px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      background-color: #f0f0f0;
+    }
+    .options button.correct {
+      background-color: #8ef58e !important;
+    }
+    .options button.wrong {
+      background-color: #f58e8e !important;
+    }
+    .options button.selected {
+      box-shadow: 0 0 10px 2px #4CAF50;
+    }
+    .options button:disabled {
+      cursor: default;
+      opacity: 0.8;
+    }
+    .footer button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin: 5px;
+      border-radius: 10px;
+    }
+    #webcam {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      width: 180px;
+      height: 135px;
+      border: 3px solid #fff;
+      border-radius: 12px;
+      z-index: 9999;
+      box-shadow: 0 0 10px #000;
+    }
+    .result-container {
+      text-align: center;
+      padding: 20px;
+      background-color: rgba(255, 255, 255, 0.9);
+      border-radius: 10px;
+      margin-top: 20px;
+    }
+    .success-message {
+      background-color: #77dd77;
+      padding: 20px;
+      border-radius: 10px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #fff;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    }
+  </style>
+</head>
+<body>
+  <video id="webcam" autoplay playsinline muted></video>
+  <div class="quiz-container">
+    <div class="header">
+      <div>Total Questions: <span id="totalQ">20</span></div>
+      <div>Time Left: <span id="totalTime">15:00</span></div>
+    </div>
+    <div class="question-area">
+      <h3 id="question">Loading question...</h3>
+      <div class="options" id="options"></div>
+      <div>Time Left: <span id="timer">40</span>s</div>
+    </div>
+    <div class="footer">
+      <button onclick="prevQuestion()" id="prevBtn">Previous</button>
+      <div>
+        <button onclick="skipQuestion()">Skip</button>
+        <button onclick="nextQuestion()">Next</button>
+      </div>
+    </div>
+  </div>
+  <audio id="correctSound" src="correct.mp3"></audio>
+  <audio id="wrongSound" src="incorrect.mp3"></audio>
+  <audio id="clickSound" src="click.mp3"></audio>
+  <audio id="tickSound" src="tick.mp3" loop></audio>
+
+ <script>
+    const questions = [
+      { q: "What is the name of the largest ocean in the world?", options: ["Atlantic Ocean", "Pacific Ocean", "Indian Ocean", "Arctic Ocean"], answer: 1 },
+      { q: "Who was the first president of India?", options: ["Dr.Rajendra Prasad", "Dr.B.R.Ambedkar", "Jawaharlal Nehru", "D.Sarvepalli Rahakrishnan"], answer: 0 },
+      { q: "In which Indian state is the festival of Pongal mainly celebrated?", options: ["Kerala", "Tamil Nadu", "Andhra Pradesh", "Maharashtra"], answer: 1 },
+      { q: "Which is the smallest continent in the world?", options: ["Europe", "Antartica", "Australia", "South America"], answer: 2 },
+      { q: "How many bones are there in adult human body?", options: ["206", "201", "216", "205"], answer: 0 },
+      { q: "Who is known as the architect of Indian Constitution?", options: ["Rajendra Prasad", "B.R.Ambedkar", "Jawaharlal Nehru", "Vallabhbhai Patel"], answer: 1 },
+      { q: "Which planet in our solar system is known as the “Ringed Planet”?", options: ["Jupiter", "Mars", "Saturn", "Uranus"], answer: 2 },
+      { q: "Which scientist is known for his theory of evolution?", options: ["Charles Darwin", "Gaileo Galilei", "Issac Newton", "Niels Bohr"], answer: 0 },
+      { q: "Which country launched Operation Sindoor in May 2025, targeting militant camps in Pakistan-administered Kashmir and Punjab?", options: ["India", "United States", "Israel", "Russia"], answer: 0 },
+      { q: "Who was the first woman to win a Nobel Prize?", options: ["Marie Curie", "Rosalind Franklin", "Ada Lovelace", "Dorothy Hodgkin"], answer: 0 },
+      { q: "If a circle has a radius of 7 cm, what is its area? (Use 𝜋≈3.14)?", options: ["150.72 cm²", "153.94 cm²", "154.98 cm²", "157.08 cm²"], answer: 1 },
+      { q: "In what year was the United Nations founded?", options: ["1945", "1950", "1960", "1970"], answer: 0 },
+      { q: "What is the rarest blood type in the world?", options: ["O-negative", "AB-negative", "A-positive", "B-negative"], answer: 1 },
+      { q: "In which year did the Titanic sink?", options: ["1912", "1905", "1920", "1898"], answer: 0 },
+      { q: "Which gas makes up most of the Earth's atmosphere?", options: ["Oxygen", "Nitrogen", "Carbon Dioxide", "Hydrogen"], answer: 1 },
+      { q: "Who was appointed as the Chairman of the Securities and Exchange Board of India (SEBI) in February 2025?", options: ["Tuhin Kanta Pandey", "Mani Shankar", "Jitendra Kumar", "Balbeer Singh"], answer: 0 },
+      { q: "Which Indian university discovered a new phytopathogenic fungus named 'Epicoccum indicum' in early 2025?", options: ["IIT Kanpur", "IIT Bombay", "IIT Madras", "IIT Roorkee"], answer: 2 },
+      { q: "In April 2025, the Indian government announced a caste enumeration as part of the upcoming decadal census. What was the significance of this decision?", options: ["It was the first time caste data would be collected since 1951.", "It aimed to provide data for targeted social welfare policies.", "It was a response to demands from various political parties.", "All of the above."], answer: 3 },
+      { q: "Which Indian state's tribal fashion gained international recognition in 2025, with participation in events like the Adiwasi Mela 2025 in Bhubaneswar and Dubai Fashion Week?", options: ["Odisha", "Jharkhand", "Madhya Pradesh", "Chhttisgarh"], answer: 1 },
+      { q: "What initiative did the Khasi Authors’ Society advocate for in 2025 to promote the Khasi language and culture?", options: ["Inclusion of Khasi in the Sixth Schedule of the Indian Constitution.", "Establishment of a Khasi Language University.", "Recognition of Khasi as a national language.", "Creation of a Khasi language television channel."], answer: 0 }
+    ];
+
+    let current = 0;
+    let totalSeconds = 900;
+    const userAnswers = new Array(questions.length).fill(null);
+    const questionTimes = new Array(questions.length).fill(40);
+    let questionTimerInterval = null;
+    let totalTimerInterval = null;
+    let webcamStream;
+
+    const correctSound = document.getElementById("correctSound");
+    const wrongSound = document.getElementById("wrongSound");
+    const clickSound = document.getElementById("clickSound");
+    const tickSound = document.getElementById("tickSound");
+
+    async function enableWebcam() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        document.getElementById("webcam").srcObject = stream;
+        webcamStream = stream;
+
+        setInterval(() => {
+          if (!webcamStream || webcamStream.getVideoTracks().length === 0 || webcamStream.getVideoTracks()[0].readyState !== "live") {
+            alert("Webcam disconnected. Quiz will be terminated.");
+            window.location.href = "login.html";
+          }
+        }, 3000);
+      } catch (err) {
+        alert("Camera access is required to start the quiz. Please allow webcam.");
+        window.location.href = "login.html";
+      }
+    }
+
+    function stopWebcam() {
+      if (webcamStream) {
+        const tracks = webcamStream.getTracks();
+        tracks.forEach(track => track.stop());
+        document.getElementById("webcam").srcObject = null;
+      }
+    }
+
+    function terminateQuiz() {
+  alert("You opened a new tab or window. You are unable to attempt the quiz anymore.");
+  stopWebcam();
+  window.location.href = "login.html"; // change to "register.html" if needed
+}
+    document.addEventListener('visibilitychange', function() {
+      if (document.hidden) {
+        terminateQuiz();
+      }
+    });
+
+    function loadQuestion() {
+      const q = questions[current];
+      document.getElementById("question").innerText = (current + 1) + ". " + q.q;
+      const opts = document.getElementById("options");
+      opts.innerHTML = "";
+      let timeLeft = questionTimes[current];
+      document.getElementById("timer").innerText = timeLeft;
+      if (questionTimerInterval) clearInterval(questionTimerInterval);
+      tickSound.pause(); tickSound.currentTime = 0;
+      q.options.forEach((opt, idx) => {
+        const btn = document.createElement("button");
+        btn.innerText = opt;
+        if (userAnswers[current] !== null) {
+          btn.disabled = true;
+          if (idx === userAnswers[current]) {
+            btn.classList.add(idx === q.answer ? "correct" : "wrong");
+            btn.classList.add("selected");
+          }
+        } else {
+          btn.onclick = () => {
+            clickSound.play();
+            userAnswers[current] = idx;
+            Array.from(opts.children).forEach((b, i) => {
+              b.disabled = true;
+              if (i === q.answer) b.classList.add("correct");
+              if (i === idx && idx !== q.answer) b.classList.add("wrong");
+            });
+            if (idx === q.answer) correctSound.play();
+            else wrongSound.play();
+            clearInterval(questionTimerInterval);
+            tickSound.pause(); tickSound.currentTime = 0;
+            setTimeout(() => nextQuestion(), 1000);
+          };
+        }
+        opts.appendChild(btn);
+      });
+      if (userAnswers[current] === null) {
+        questionTimerInterval = setInterval(() => {
+          timeLeft--;
+          questionTimes[current] = timeLeft;
+          document.getElementById("timer").innerText = timeLeft;
+          if (timeLeft === 10) tickSound.play();
+          if (timeLeft <= 0) {
+            clearInterval(questionTimerInterval);
+            tickSound.pause(); tickSound.currentTime = 0;
+            userAnswers[current] = null;
+            nextQuestion();
+          }
+        }, 1000);
+      }
+      document.getElementById("prevBtn").disabled = current === 0;
+    }
+
+    function updateTotalTime() {
+      totalSeconds--;
+      let min = Math.floor(totalSeconds / 60);
+      let sec = totalSeconds % 60;
+      document.getElementById("totalTime").innerText = String(min).padStart(2, '0') + ":" + String(sec).padStart(2, '0');
+      if (totalSeconds <= 0) {
+        clearInterval(totalTimerInterval);
+        clearInterval(questionTimerInterval);
+        tickSound.pause(); tickSound.currentTime = 0;
+        showResult();
+      }
+    }
+
+    function nextQuestion() {
+      if (current < questions.length - 1) {
+        current++;
+        loadQuestion();
+      } else {
+        showResult();
+      }
+    }
+
+    function prevQuestion() {
+      if (current > 0) {
+        current--;
+        loadQuestion();
+      }
+    }
+
+    function skipQuestion() {
+      if (userAnswers[current] === null) {
+        userAnswers[current] = null;
+        clearInterval(questionTimerInterval);
+        tickSound.pause(); tickSound.currentTime = 0;
+      }
+      nextQuestion();
+    }
+
+    function showResult() {
+      const correctCount = userAnswers.filter((ans, idx) => ans === questions[idx].answer).length;
+      const wrongCount = userAnswers.filter((ans, idx) => ans !== null && ans !== questions[idx].answer).length;
+      const unattemptedCount = userAnswers.filter(ans => ans === null).length;
+      const resultMessage = `Congratulations! You scored ${correctCount} out of ${questions.length}.`;
+      const resultContainer = document.createElement("div");
+      resultContainer.classList.add("result-container");
+      resultContainer.innerHTML = `
+        <h2>Quiz Completed</h2>
+        <p class="success-message">${resultMessage}</p>
+        <p>Correct Answers: ${correctCount}</p>
+        <p>Wrong Answers: ${wrongCount}</p>
+        <p>Unattempted: ${unattemptedCount}</p>
+      `;
+      document.body.appendChild(resultContainer);
+      stopWebcam();
+    }
+
+  window.onload = async () => {
+      await enableWebcam();
+      document.getElementById("totalQ").innerText = questions.length;
+      loadQuestion();
+      totalTimerInterval = setInterval(updateTotalTime, 1000);
+    };
+  </script>
+</body>
+</html>

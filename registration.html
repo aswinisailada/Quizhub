@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Register - Quiz App</title>
+  <script>
+    function showRegisterMessage(event) {
+      event.preventDefault(); // Prevent form from refreshing
+      alert("Registration successful!");
+window.location.href = "topicselection.html";
+    }
+  </script>
+</head>
+<body style="text-align:center;
+ font-family:segoe ui semibold; 
+margin-top: 120px;
+ background-image: url('register.jpg');
+background-size:cover;
+background-position:center;
+background-repeat:no-repeat;
+min-height:100vh;">
+<center>
+<marquee bgcolor="lavender" direction="right" width="900" behavior="alternate">
+<font face="copper plate gothic bold" size="7" color="hotpink" font-size:50px> REGISTER TO QUIZ HUB</font>
+</marquee><br>
+</center>
+<br>
+<br>
+  <form onsubmit="showRegisterMessage(event)">
+    <label for="enter name" style="font-size: 20px;">Enter Name:</label>
+    <input type="text" id="name" name="name" required style="padding:10px;"></input><br><br>
+    <label for="enter email" style="font-size:20px;">Enter Email:</label>
+    <input type="email" id="email" name="email" required style="padding: 10px;"></input><br><br>
+    <label for="enter password" style="font-size: 20px;">Enter Password:</label>
+    <input type="password" id="password" name="password" required style="padding: 10px;"></input><br><br>
+    <input type="submit" value="Register" style="padding: 10px 20px; background-color: green; color: white; border: none; border-radius: 5px;">
+    <input type="reset" value="Reset" style="padding: 10px 20px; background-color: gray; color: white; border: none; border-radius: 5px;">
+  </form>
+  <p><a href="homepage.html">Back to Home</a></p>
+</body>
+</html>

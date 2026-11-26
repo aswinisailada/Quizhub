@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quiz Instructions</title>
+  <style>
+    body {
+      margin: 0; padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: url('https://images.unsplash.com/photo-1581090700227-1e8e5f04ca4b?auto=format&fit=crop&w=1470&q=80') no-repeat center center fixed;
+      background-size: cover;
+      color: #222;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .overlay {
+      background-color: rgba(255, 255, 255, 0.95);
+      max-width: 700px;
+      padding: 30px 40px;
+      border-radius: 14px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      text-align: left;
+    }
+    h1 {
+      text-align: center;
+      color: #5a2a83;
+      margin-bottom: 25px;
+      font-weight: 700;
+    }
+    ol {
+      padding-left: 20px;
+      font-size: 1.15em;
+      line-height: 1.7;
+    }
+    li {
+      margin-bottom: 14px;
+    }
+    .btn-start {
+      display: block;
+      width: 220px;
+      margin: 40px auto 0;
+      padding: 15px;
+      font-size: 18px;
+      background-color: #5a2a83;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      text-align: center;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background-color 0.3s ease;
+      text-decoration: none;
+    }
+    .btn-start:hover {
+      background-color: #7a44b8;
+    }
+    @media (max-width: 650px) {
+      .overlay {
+        padding: 25px 20px;
+        margin: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="overlay">
+    <h1>Quiz Instructions</h1>
+    <ol>
+      <li>There are 20 multiple-choice questions in this quiz.</li>
+      <li>You have 30 seconds to answer each question.</li>
+      <li>When time runs out, the quiz will automatically move to the next question.</li>
+      <li>Camera access is required during the quiz.</li>
+      <li>If two or more persons are detected in the camera, the quiz will end immediately.</li>
+      <li>If you switch tabs or open a new tab, the quiz will end immediately.</li>
+      <li>Use the Next, Previous, and Skip buttons to navigate through questions.</li>
+      <li>Once time is up for a question, you cannot attempt it again.</li>
+      <li>Do not reload or refresh the page after starting the quiz.</li>
+      <li>Your score will be displayed after completing all questions.</li>
+    </ol>
+    <a href="co.html" class="btn-start">Start Quiz</a>
+  </div>
+</body>
+</html>

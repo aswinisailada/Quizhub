@@ -1,0 +1,44 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>login page</title>
+<script>
+function showSuccessMessage(event)
+{
+event.preventDefault();
+alert("Your login is succesfully completed!");
+}
+</script>
+</head>
+<body id="img" style="text-align:center;
+font-family:rockwell;
+color:#4B0082; 
+margin-top:100px;
+background-image:url('https://img.freepik.com/free-photo/cloud-paper-light-bulb_23-2148519485.jpg?t=st=1743949716~exp=1743953316~hmac=3dfcdfc9d00b36e0a17b4bd4a439db723fd1abca6e08a4e11348a07730bbcb07&w=1380');
+background-size:cover;
+background-position:center;
+background-repeat:no-repeat;
+height=100px;">
+<center>
+<marquee bgcolor="pink" direction="right" width="900" behaviour="alternative">
+<font face="copper plate gothic bold" size="7" color="indigo" font-size:50px> LOGIN TO QUIZ HUB</font>
+</marquee><br>
+</center>
+<br>
+<br>
+<form onsubmit="showSuccessMessage(event);">
+<label for="enter username" style="font-size:25px">Enter Username:</label>
+<input type="username" id="username" name="username" required></input><br><br>
+<label for="enter password" style="font-size:25px">Enter Password:</label>
+<input type="password" id="password" name="password" required></input><br><br>
+<br>
+<br>
+<input type="submit" value="submit" style="background-color:green;color:white; font-size:25px"></input>
+<input type="reset" value="reset" style="background-color:gray;color:white;font-size:25px; ">
+</form>
+<br>
+<br>
+<p style="font-size:25px;"><a href="homepage.html">Back to Home</a></p>
+</body>
+</html>

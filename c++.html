@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C++ Quiz Game</title>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: url('color.jpg') no-repeat center center fixed;
+            background-size: cover;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+            overflow: hidden; /* Prevent scrollbar from petals */
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh; /* Ensure body takes full viewport height */
+        }
+        #header {
+            display:flex;
+            justify-content:space-between;
+            padding: 10px 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            z-index: 20; /* Ensure header is above other elements */
+        }
+        #webcam {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            width: 160px;
+            height: 120px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+            z-index: 10;
+            transition: all 0.5s ease-in-out;
+            transform: scaleX(-1); /* Mirror the webcam feed */
+        }
+        #webcam.hidden {
+            width: 0;
+            height: 0;
+            opacity: 0;
+            visibility: hidden;
+            border: none; /* Remove border when hidden */
+            box-shadow: none; /* Remove shadow when hidden */
+        }
+        .question-box {
+            display: none; /* Hidden by default, shown when quiz starts */
+            margin: auto; /* Center vertically and horizontally */
+            max-width: 2500px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 20px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+            padding: 20px;
+            flex-grow: 1; /* Allows it to take available space */
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* Center content vertically within the box */
+        }
+        .question {
+            font-size: 1.6em;
+            margin-bottom: 12px;
+            color: #000;
+            text-align: center;
+        }
+        .options label {
+            display: block;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 8px;
+            background: #ffe4ec;
+            cursor: pointer;
+            transition: 0.3s;
+            color: #333;
+        }
+        .options label:hover {
+            background: #ffc2d1;
+        }
+        .options label input[type="radio"] {
+            margin-right: 10px;
+        }
+        .correct { background: #a8e6cf !important; border: 2px solid green; }
+        .incorrect { background: #f08080 !important; border: 2px solid red; }
+        #timer-main, #remaining {
+            font-size: 1em;
+            padding: 5px 10px;
+            background: rgba(255,255,255,0.8);
+            border-radius: 6px;
+            color: #333;
+        }
+        #question-timer {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.2em;
+            background: rgba(255,255,255,0.85);
+            padding: 10px 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            color: #333;
+            display: none; /* Hidden by default */
+            z-index: 20; /* Ensure timer is above buttons */
+        }
+        #prev-btn, #skip-btn {
+            position: fixed;
+            bottom: 10px;
+            padding: 10px 20px;
+            font-size: 1em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            display: none; /* Hidden by default */
+            z-index: 20; /* Ensure buttons are above petals */
+        }
+        #prev-btn { left: 10px; background-color: #add8e6; }
+        #skip-btn { right: 10px; background-color: #add8e6; }
+        #scoreboard {
+            display: none;
+            text-align: center;
+            font-size: 2.4em;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            margin: auto; /* Center horizontally and vertically */
+            padding: 40px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 20px;
+            max-width: 700px;
+            position: relative;
+            z-index: 50; /* Above everything else */
+        }
+        #scoreboard p { margin: 10px 0; }
+        #back-to-homepage {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 15px 30px;
+            font-size: 0.6em;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        #back-to-homepage:hover { background-color: #45a049; }
+        .petals {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 100; /* Above everything except potentially a modal/alert */
+            overflow: hidden; /* Prevent scrollbar if petals go out of bounds */
+        }
+        .petal {
+            width: 20px; height: 20px; background: pink;
+            border-radius: 50%; position: absolute;
+            animation: fall 10s linear infinite; /* Increased duration for slower fall */
+            opacity: 0.8;
+            pointer-events: none; /* Ensure petals don't interfere with clicks */
+            box-shadow: 0 0 5px rgba(255,192,203,0.5); /* Soft glow */
+        }
+        @keyframes fall {
+            0% { transform: translateY(-10%) translateX(0px) rotate(0deg); opacity:1; }
+            100% { transform: translateY(100vh) translateX(50px) rotate(360deg); opacity:0; }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <div id="header">
+        <div id="remaining">Total no. of Questions: 20</div>
+        <div id="timer-main">Time Left: 10:00</div>
+    </div>
+    <video id="webcam" autoplay muted playsinline></video>
+    <div id="question-timer">Question Time: 00:30</div>
+    <button id="prev-btn">Previous</button>
+    <button id="skip-btn">Skip</button>
+    <div id="quiz" class="question-box">
+        <div class="question" id="question-text"></div>
+        <div class="options" id="options"></div>
+    </div>
+    <div id="scoreboard"></div>
+    <div class="petals" id="petals"></div>
+
+    <audio id="correctSound" src="rightanswer-95219.mpol3" preload="auto"></audio>
+    <audio id="wrongSound" src="buzzer-or-wrong-answer-20582.mp3" preload="auto"></audio>
+    <audio id="popSound" src="hooray-36461.mp3" preload="auto"></audio>
+
+    <script type="module">
+        import { FaceDetector, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.js";
+
+        // --- DOM Elements ---
+        const webcam = document.getElementById("webcam");
+        const questionTextElement = document.getElementById("question-text");
+        const optionsElement = document.getElementById("options");
+        const quizBox = document.getElementById("quiz");
+        const scoreboard = document.getElementById('scoreboard');
+        const questionTimerDisplay = document.getElementById('question-timer');
+        const mainTimerDisplay = document.getElementById('timer-main');
+        const remainingQuestionsDisplay = document.getElementById('remaining');
+        const prevBtn = document.getElementById('prev-btn');
+        const skipBtn = document.getElementById('skip-btn');
+        const petalsContainer = document.getElementById('petals');
+
+        // --- Audio Elements ---
+        const correctSound = document.getElementById('correctSound');
+        const wrongSound = document.getElementById('wrongSound');
+        const popSound = document.getElementById('popSound');
+
+        // --- Quiz Variables ---
+        let stream;
+        let faceDetector;
+        let lastVideoTime = -1;
+        let currentQuestionIndex = 0;
+        let score = 0;
+        // New variables for detailed scoring
+        let correctCount = 0;
+        let wrongCount = 0;
+        let unansweredCount = 0;
+
+        let answeredQuestions = new Set(); // To track answered questions and prevent re-answering
+        let questionTimerInterval;
+        let mainTimerInterval;
+        let quizActive = false; // Flag to control quiz state
+        const QUESTION_TIME_LIMIT = 30; // seconds per question
+        const TOTAL_QUIZ_TIME = 10 * 60; // 10 minutes in seconds
+        let questionTimeLeft = QUESTION_TIME_LIMIT;
+        let totalTimeLeft = TOTAL_QUIZ_TIME;
+
+        // --- Quiz Questions (Now for C++) ---
+        const questions = [
+            {
+                question: "Which of the following is a key feature of C++ that allows objects to be treated polymorphically?",
+                options: [
+                    "Data encapsulation",
+                    "Inheritance",
+                    "Virtual functions",
+                    "Function overloading"
+                ],
+                answer: "Virtual functions",
+                status: "unanswered"
+            },
+            {
+                question: "What does `std::cout` typically stream data to?",
+                options: [
+                    "Standard input device",
+                    "Standard error device",
+                    "Standard output device",
+                    "A file"
+                ],
+                answer: "Standard output device",
+                status: "unanswered"
+            },
+            {
+                question: "In C++, what is the purpose of the `new` operator?",
+                options: [
+                    "To declare a new variable",
+                    "To create a new class",
+                    "To allocate memory dynamically on the heap",
+                    "To define a new function"
+                ],
+                answer: "To allocate memory dynamically on the heap",
+                status: "unanswered"
+            },
+            {
+                question: "Which keyword is used to prevent a class from being inherited in C++?",
+                options: [
+                    "static",
+                    "final",
+                    "abstract",
+                    "const"
+                ],
+                answer: "final",
+                status: "unanswered"
+            },
+            {
+                question: "What is the C++ standard library component used for handling strings?",
+                options: [
+                    "std::array",
+                    "std::vector",
+                    "std::string",
+                    "std::list"
+                ],
+                answer: "std::string",
+                status: "unanswered"
+            },
+            {
+                question: "Which of these is NOT a valid access specifier in C++?",
+                options: [
+                    "public",
+                    "private",
+                    "protected",
+                    "internal"
+                ],
+                answer: "internal",
+                status: "unanswered"
+            },
+            {
+                question: "What is a constructor in C++?",
+                options: [
+                    "A function that destroys an object",
+                    "A special member function that initializes objects",
+                    "A function that returns a value",
+                    "A keyword for creating objects"
+                ],
+                answer: "A special member function that initializes objects",
+                status: "unanswered"
+            },
+            {
+                question: "Which header file is typically included for input/output operations in C++?",
+                options: [
+                    "<string>",
+                    "<vector>",
+                    "<iostream>",
+                    "<algorithm>"
+                ],
+                answer: "<iostream>",
+                status: "unanswered"
+            },
+            {
+                question: "What does `nullptr` represent in C++11 and later?",
+                options: [
+                    "An integer value of 0",
+                    "A floating-point value of 0.0",
+                    "A null pointer constant",
+                    "An empty string"
+                ],
+                answer: "A null pointer constant",
+                status: "unanswered"
+            },
+            {
+                question: "What is the purpose of the `const` keyword when applied to a member function in C++?",
+                options: [
+                    "It makes the function a global function",
+                    "It prevents the function from modifying any member variables",
+                    "It forces the function to return a constant value",
+                    "It makes the function static"
+                ],
+                answer: "It prevents the function from modifying any member variables",
+                status: "unanswered"
+            },
+            {
+                question: "Which concept allows a class to derive properties and behavior from another class?",
+                options: [
+                    "Polymorphism",
+                    "Encapsulation",
+                    "Inheritance",
+                    "Abstraction"
+                ],
+                answer: "Inheritance",
+                status: "unanswered"
+            },
+            {
+                question: "What is the result of `5 / 2` in C++ integer division?",
+                options: [
+                    "2.5",
+                    "2",
+                    "3",
+                    "Error"
+                ],
+                answer: "2",
+                status: "unanswered"
+            },
+            {
+                question: "Which loop is guaranteed to execute at least once?",
+                options: [
+                    "for loop",
+                    "while loop",
+                    "do-while loop",
+                    "foreach loop"
+                ],
+                answer: "do-while loop",
+                status: "unanswered"
+            },
+            {
+                question: "What is `this` pointer in C++?",
+                options: [
+                    "A pointer to the base class",
+                    "A pointer to the derived class",
+                    "A pointer to the current object",
+                    "A pointer to a static member"
+                ],
+                answer: "A pointer to the current object",
+                status: "unanswered"
+            },
+            {
+                question: "Which of the following is used to resolve the scope of global variables when local variables have the same name?",
+                options: [
+                    "Namespace",
+                    "Scope resolution operator (::)",
+                    "Dot operator (.)",
+                    "Arrow operator (->)"
+                ],
+                answer: "Scope resolution operator (::)",
+                status: "unanswered"
+            },
+            {
+                question: "What is a pure virtual function in C++?",
+                options: [
+                    "A virtual function that has no implementation and makes the class abstract",
+                    "A virtual function that can be overridden but not called",
+                    "A function that returns a void pointer",
+                    "A static member function"
+                ],
+                answer: "A virtual function that has no implementation and makes the class abstract",
+                status: "unanswered"
+            },
+            {
+                question: "What is the purpose of a destructor in C++?",
+                options: [
+                    "To create an object",
+                    "To initialize an object",
+                    "To deallocate memory and clean up resources before an object is destroyed",
+                    "To copy an object"
+                ],
+                answer: "To deallocate memory and clean up resources before an object is destroyed",
+                status: "unanswered"
+            },
+            {
+                question: "Which C++ feature allows a function to operate on different data types without being rewritten for each type?",
+                options: [
+                    "Inheritance",
+                    "Polymorphism",
+                    "Templates",
+                    "Encapsulation"
+                ],
+                answer: "Templates",
+                status: "unanswered"
+            },
+            {
+                question: "What does the `break` statement do in a loop?",
+                options: [
+                    "Skips the current iteration and continues with the next",
+                    "Terminates the loop entirely",
+                    "Restarts the loop from the beginning",
+                    "Pauses the loop temporarily"
+                ],
+                answer: "Terminates the loop entirely",
+                status: "unanswered"
+            },
+            {
+                question: "Which of these is an example of operator overloading?",
+                options: [
+                    "Defining two functions with the same name but different parameters",
+                    "Giving new meaning to an existing C++ operator for a user-defined type",
+                    "Overriding a base class method in a derived class",
+                    "Creating a new operator"
+                ],
+                answer: "Giving new meaning to an existing C++ operator for a user-defined type",
+                status: "unanswered"
+            }
+        ];
+
+        // --- MediaPipe Face Detection Functions ---
+        async function createFaceDetector() {
+            try {
+                const filesetResolver = await FilesetResolver.forVisionTasks(
+                    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+                );
+                faceDetector = await FaceDetector.createFromOptions(filesetResolver, {
+                    baseOptions: {
+                        modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite",
+                        delegate: "GPU" // or 'CPU'
+                    },
+                    runningMode: "VIDEO",
+                    minDetectionConfidence: 0.7, // Increased confidence for better reliability
+                    numFaces: 1 // Detect only one face
+                });
+                console.log("FaceDetector initialized.");
+            } catch (error) {
+                console.error("Failed to initialize FaceDetector:", error);
+                alert("Failed to load face detection model. Please ensure you have a stable internet connection.");
+                endQuizDueToViolation("Failed to load face detection. Check your internet connection.");
+            }
+        }
+
+        async function startWebcam() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                webcam.srcObject = stream;
+                webcam.onloadedmetadata = async () => {
+                    await webcam.play(); // Ensure video starts playing
+                    console.log("Webcam video loaded and playing.");
+                    if (!faceDetector) {
+                        await createFaceDetector();
+                    }
+                    if (faceDetector) { // Only proceed if detector was successfully created
+                        quizActive = true;
+                        detectFaces(); // Start face detection
+                        startQuizTimers(); // Start quiz timers once webcam and detector are ready
+                        loadQuestion(); // Load the first question
+                        quizBox.style.display = 'flex'; // Show the quiz box
+                        questionTimerDisplay.style.display = 'block'; // Show question timer
+                        prevBtn.style.display = 'block'; // Show prev button
+                        skipBtn.style.display = 'block'; // Show skip button
+                    }
+                };
+            } catch (e) {
+                alert("Webcam access is required to take this quiz. Please allow camera access and refresh the page. Error: " + e.message);
+                console.error("Webcam access error:", e);
+                endQuizDueToViolation("Webcam access denied. Quiz cannot be started.");
+            }
+        }
+
+        function detectFaces() {
+            if (!quizActive || !faceDetector || !webcam.srcObject || webcam.readyState < 2) {
+                // If quiz is not active, stop requesting frames for detection
+                return;
+            }
+
+            let startTimeMs = performance.now();
+            if (lastVideoTime !== webcam.currentTime) {
+                lastVideoTime = webcam.currentTime;
+                try {
+                    const detections = faceDetector.detectForVideo(webcam, startTimeMs);
+                    if (detections && detections.detections.length > 1) {
+                        alert("More than one person detected. The quiz will now end.");
+                        endQuizDueToViolation("Multiple faces detected.");
+                        return;
+                    }
+                } catch (error) {
+                    console.error("Error during face detection:", error);
+                    // This might happen if webcam stream is interrupted.
+                    // Consider ending quiz or showing warning.
+                    endQuizDueToViolation("An error occurred during face detection.");
+                    return;
+                }
+            }
+            requestAnimationFrame(detectFaces); // Continue detection
+        }
+
+        function stopWebcam() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            webcam.classList.add("hidden"); // Hide and collapse webcam element
+            webcam.srcObject = null;
+            if (faceDetector) {
+                faceDetector.close();
+                faceDetector = null;
+            }
+        }
+
+        // --- Quiz State Management ---
+        function endQuizDueToViolation(message) {
+            if (!quizActive) return; // Prevent multiple calls if already terminated
+            quizActive = false; // Set quiz to inactive
+            clearInterval(questionTimerInterval);
+            clearInterval(mainTimerInterval);
+            stopWebcam(); // Close webcam
+            hideQuizElements();
+            showScoreboard(`Quiz Ended: ${message}`, true); // Pass true to indicate a termination
+        }
+
+        function hideQuizElements() {
+            quizBox.style.display = 'none';
+            questionTimerDisplay.style.display = 'none';
+            prevBtn.style.display = 'none';
+            skipBtn.style.display = 'none';
+            mainTimerDisplay.style.display = 'none'; // Hide main timer as well
+            remainingQuestionsDisplay.style.display = 'none'; // Hide remaining questions
+        }
+
+        // --- Quiz Logic Functions ---
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+        }
+
+        function startQuizTimers() {
+            // Main Quiz Timer
+            mainTimerInterval = setInterval(() => {
+                totalTimeLeft--;
+                mainTimerDisplay.textContent = `Time Left: ${formatTime(totalTimeLeft)}`;
+                if (totalTimeLeft <= 0) {
+                    clearInterval(mainTimerInterval);
+                    endQuizDueToViolation("Time's up for the entire quiz!");
+                }
+            }, 1000);
+
+            // Start the first question timer
+            startQuestionTimer();
+        }
+
+        function startQuestionTimer() {
+            clearInterval(questionTimerInterval); // Clear any existing timer
+            questionTimeLeft = QUESTION_TIME_LIMIT;
+            questionTimerDisplay.textContent = `Question Time: ${formatTime(questionTimeLeft)}`;
+
+            questionTimerInterval = setInterval(() => {
+                questionTimeLeft--;
+                questionTimerDisplay.textContent = `Question Time: ${formatTime(questionTimeLeft)}`;
+                if (questionTimeLeft <= 0) {
+                    clearInterval(questionTimerInterval);
+                    // Automatically mark as unanswered and move to next question if time runs out
+                    alert("Time's up for this question! Moving to the next.");
+                    wrongSound.play();
+                    // Mark current question as unanswered
+                    if (!answeredQuestions.has(currentQuestionIndex)) {
+                        questions[currentQuestionIndex].status = "unanswered";
+                        // We increment unansweredCount only when we finalize scores in showScoreboard
+                        // to avoid issues with users navigating back and forth.
+                    }
+                    answeredQuestions.add(currentQuestionIndex);
+                    // Move to next question immediately
+                    moveToNextQuestion();
+                }
+            }, 1000);
+        }
+
+        function loadQuestion() {
+            if (!quizActive) return; // Don't load if quiz isn't active
+
+            if (currentQuestionIndex >= questions.length) {
+                showScoreboard("Quiz Complete!"); // All questions answered
+                return;
+            }
+
+            // Update remaining questions count (only for truly unanswered questions yet)
+            // This counts questions that haven't been touched (no status set yet or still 'unanswered')
+            const remainingForQuiz = questions.length - answeredQuestions.size;
+            remainingQuestionsDisplay.textContent = `Total no. of Questions: ${remainingForQuiz}`;
+
+            const q = questions[currentQuestionIndex];
+            questionTextElement.textContent = q.question;
+            optionsElement.innerHTML = ''; // Clear previous options
+            q.options.forEach(option => {
+                const label = document.createElement('label');
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.name = 'answer';
+                input.value = option;
+
+                // If question has already been answered, disable options and show selection
+                if (answeredQuestions.has(currentQuestionIndex)) {
+                    input.disabled = true;
+                    if (option === q.selectedAnswer) { // Check if this was the selected answer
+                        input.checked = true;
+                        if (option === q.answer) {
+                            label.classList.add('correct');
+                        } else {
+                            label.classList.add('incorrect');
+                        }
+                    } else if (option === q.answer && q.status === "wrong") { // Highlight correct answer if user got it wrong
+                        label.classList.add('correct');
+                    }
+                } else {
+                    input.onclick = () => checkAnswer(option, q.answer, label);
+                }
+
+                label.appendChild(input);
+                label.appendChild(document.createTextNode(option));
+                optionsElement.appendChild(label);
+            });
+
+            // If question hasn't been answered yet, restart its specific timer
+            if (!answeredQuestions.has(currentQuestionIndex)) {
+                startQuestionTimer();
+            } else {
+                // If already answered, stop question timer and reset display
+                clearInterval(questionTimerInterval);
+                questionTimerDisplay.textContent = "Question Time: --:--"; // Indicate no active timer
+            }
+        }
+
+        function checkAnswer(selectedOption, correctAnswer, labelElement) {
+            if (!quizActive || answeredQuestions.has(currentQuestionIndex)) {
+                return; // Prevent action if quiz inactive or already answered
+            }
+
+            // Disable all options for the current question
+            Array.from(optionsElement.children).forEach(childLabel => {
+                childLabel.querySelector('input').disabled = true;
+            });
+
+            // Store the selected answer
+            questions[currentQuestionIndex].selectedAnswer = selectedOption;
+
+            // Update question status
+            if (selectedOption === correctAnswer) {
+                score++;
+                questions[currentQuestionIndex].status = "correct";
+                labelElement.classList.add('correct');
+                correctSound.play();
+            } else {
+                questions[currentQuestionIndex].status = "wrong";
+                labelElement.classList.add('incorrect');
+                wrongSound.play();
+                // Highlight the correct answer if the user was wrong
+                Array.from(optionsElement.children).forEach(childLabel => {
+                    if (childLabel.querySelector('input').value === correctAnswer) {
+                        childLabel.classList.add('correct');
+                    }
+                });
+            }
+
+            answeredQuestions.add(currentQuestionIndex); // Mark this question as answered
+            clearInterval(questionTimerInterval); // Stop the current question timer
+
+            // Move to the next question after a short delay
+            setTimeout(() => {
+                moveToNextQuestion();
+            }, 1500); // 1.5 second delay for feedback
+        }
+
+        function moveToNextQuestion() {
+            if (!quizActive) return;
+
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                loadQuestion();
+            } else {
+                showScoreboard("Quiz Complete!"); // All questions answered
+            }
+        }
+
+        function moveToPreviousQuestion() {
+            if (!quizActive) return;
+
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                loadQuestion();
+            }
+        }
+
+        function skipQuestion() {
+            if (!quizActive) return;
+
+            if (!answeredQuestions.has(currentQuestionIndex)) {
+                // If question hasn't been answered, mark it as skipped/unanswered
+                questions[currentQuestionIndex].selectedAnswer = "skipped"; // Use a specific value for skipped
+                questions[currentQuestionIndex].status = "unanswered"; // Explicitly set as unanswered
+                answeredQuestions.add(currentQuestionIndex);
+            }
+            moveToNextQuestion();
+        }
+
+        function showScoreboard(completionMessage, terminated = false) {
+            quizActive = false; // Ensure quiz is marked inactive
+            clearInterval(questionTimerInterval);
+            clearInterval(mainTimerInterval);
+            stopWebcam(); // Close webcam and hide it
+
+            hideQuizElements(); // Hide all quiz-related UI
+
+            // Recalculate counts based on the final status of each question
+            correctCount = questions.filter(q => q.status === "correct").length;
+            wrongCount = questions.filter(q => q.status === "wrong").length;
+            // Unanswered questions are those not explicitly marked as correct or wrong
+            unansweredCount = questions.length - (correctCount + wrongCount);
+
+            let scoreMessage = `Your Score: ${score} / ${questions.length}`;
+            let detailedScore = `
+                <p>Correct: ${correctCount}</p>
+                <p>Wrong: ${wrongCount}</p>
+                <p>Unanswered: ${unansweredCount}</p>
+            `;
+
+            if (terminated) {
+                scoreboard.innerHTML = `
+                    <p style="color: yellow; font-size: 1.5em;">${completionMessage}</p>
+                    <p>${scoreMessage}</p>
+                    ${detailedScore}
+                    <a id="back-to-homepage" href="homepage.html">Back to Homepage</a>
+                `;
+            } else {
+                scoreboard.innerHTML = `
+                    <p>${completionMessage}</p>
+                    <p>${scoreMessage}</p>
+                    ${detailedScore}
+                    <a id="back-to-homepage" href="homepage.html">Back to Homepage</a>
+                `;
+                // Trigger petal animation only on successful completion
+                startPetalAnimation();
+            }
+            scoreboard.style.display = 'block';
+            popSound.play(); // Play a celebratory sound
+        }
+
+        // --- Petal Animation Logic ---
+        function startPetalAnimation() {
+            // Create a burst of petals
+            for (let i = 0; i < 50; i++) { // Generate 50 petals
+                createPetal();
+            }
+            // Continue adding petals for a duration
+            let petalAnimationDuration = 10000; // 10 seconds
+            let startTime = Date.now();
+            const addMorePetals = () => {
+                if (Date.now() - startTime < petalAnimationDuration) {
+                    createPetal();
+                    setTimeout(addMorePetals, Math.random() * 200); // Add new petal every 0-200ms
+                }
+            };
+            addMorePetals();
+        }
+
+        function createPetal() {
+            const petal = document.createElement('div');
+            petal.classList.add('petal');
+            petal.style.left = `${Math.random() * 100}vw`; // Random horizontal position
+            petal.style.animationDuration = `${5 + Math.random() * 5}s`; // Random duration 5-10s
+            petal.style.animationDelay = `-${Math.random() * 5}s`; // Start some petals already in motion
+            petal.style.opacity = `${0.5 + Math.random() * 0.5}`; // Random opacity
+            petal.style.transform = `scale(${0.5 + Math.random() * 0.5})`; // Random size
+            petalsContainer.appendChild(petal);
+
+            // Remove petal after animation to prevent DOM bloat
+            petal.addEventListener('animationend', () => {
+                petal.remove();
+            });
+        }
+
+        // --- Event Listeners ---
+        prevBtn.addEventListener('click', moveToPreviousQuestion);
+        skipBtn.addEventListener('click', skipQuestion);
+
+        // --- Tab/Window Visibility Detection ---
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden && quizActive) {
+                // User switched tabs or minimized window
+                alert("You switched tabs or minimized the window. The quiz will now end.");
+                endQuizDueToViolation("Tab/Window switched.");
+            }
+        });
+
+        // --- Initialization ---
+        window.onload = () => {
+            // Give a slight delay before starting webcam and quiz to ensure DOM is fully ready
+            setTimeout(() => {
+                startWebcam();
+            }, 500);
+        };
+
+        // Stop webcam and clear timers if user navigates away or closes tab
+        window.addEventListener('beforeunload', () => {
+            // Only end quiz if it's currently active (prevents double termination messages)
+            if (quizActive) {
+                endQuizDueToViolation("User left the page.");
+            }
+        });
+    </script>
+</body>
+</html>
